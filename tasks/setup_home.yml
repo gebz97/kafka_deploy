@@ -1,0 +1,31 @@
+- name: Set kafka tarball name
+  ansible.builtin.set_fact:
+    kafka_tarball_name: "{{ kafka_url | urlsplit('path') | basename }}"
+
+- name: Check if kafka home is empty
+  ansible.builtin.find:
+    paths: "{{ kafka_home }}"
+    file_type: any
+    hidden: true
+  register: kafka_home_find
+
+- name: set kafka_home_empty
+  ansible.builtin.set_fact:
+    kafka_home_empty: "{{ (kafka_home_find.matched | default(0)) == 0 }}"
+
+- name: Assert kafka home is empty
+  when: download_tarball | bool
+  ansible.builtin.assert:
+    that: kafka_home_empty | bool
+    fail_msg: "Kafka home is not empty"
+
+- name: Push kafka tarball to managed hosts
+  when: download_tarball | bool
+  ansible.builtin.unarchive:
+    src: "{{ kafka_url }}"
+    dest: "{{ kafka_home }}"
+    remote_src: true
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    extra_opts: 
+      - "--strip-components=1"

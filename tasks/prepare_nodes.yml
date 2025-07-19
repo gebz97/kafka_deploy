@@ -1,0 +1,27 @@
+---
+- name: Ensure kafka group exists
+  ansible.builtin.group:
+    name: "{{ kafka_group }}"
+    state: present
+
+- name: Ensure kafka user exists
+  ansible.builtin.user:
+    name: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    password: "{{ kafka_os_user_password | password_hash('sha512') }}"
+    state: present
+    home: "{{ kafka_home }}"
+    shell: "{{ kafka_os_user_shell | default('/sbin/nologin') }}"
+    update_password: on_create
+
+- name: Ensure kafka home exists
+  ansible.builtin.file:
+    path: "{{ kafka_home }}"
+    state: directory
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+
+- name: Ensure java is installed
+  ansible.builtin.dnf:
+    name: java-21-openjdk
+    state: present
