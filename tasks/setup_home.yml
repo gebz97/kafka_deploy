@@ -14,13 +14,11 @@
     kafka_home_empty: "{{ (kafka_home_find.matched | default(0)) == 0 }}"
 
 - name: Assert kafka home is empty
-  when: download_tarball | bool
   ansible.builtin.assert:
     that: kafka_home_empty | bool
     fail_msg: "Kafka home is not empty"
 
 - name: Push kafka tarball to managed hosts
-  when: download_tarball | bool
   ansible.builtin.unarchive:
     src: "{{ kafka_url }}"
     dest: "{{ kafka_home }}"

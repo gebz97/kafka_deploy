@@ -1,1 +1,11 @@
-#- name: 
+- name: Generate Kafka Cluster UUID
+  register: kafka_cluster_uuid_out
+  ansible.builtin.command: "{{ kafka_home }}/bin/kafka-storage.sh random-uuid"
+
+- name: Set kafka cluster UUID fact
+  ansible.builtin.set_fact:
+    kafka_cluster_uuid: "{{ kafka_cluster_uuid_out.stdout }}"
+
+- name: Debug kafka cluster UUID fact
+  ansible.builtin.debug:
+    var: kafka_cluster_uuid
