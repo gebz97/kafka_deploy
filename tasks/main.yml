@@ -10,16 +10,16 @@
 
 - name: Deploy single instance kafka
   when:
-    - single_instance is defined
-    - single_instance | bool
-    - multinode_cluster is not defined or not multinode_cluster | bool
+    - standalone is defined
+    - standalone | bool
+    - multinode is not defined or not multinode | bool
   ansible.builtin.include_tasks:
-    file: single.yml
+    file: standalone.yml
 
 - name: Deploy Multinode kafka Cluster
   when:
-    - multinode_cluster is defined
-    - multinode_cluster | bool
-    - single_instance is not defined or not single_instance | bool
+    - multinode is defined
+    - multinode | bool
+    - standalone is not defined or not standalone | bool
   ansible.builtin.include_tasks:
     file: multinode.yml

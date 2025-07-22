@@ -2,16 +2,17 @@
   ansible.builtin.set_fact:
     kafka_tarball_name: "{{ kafka_url | urlsplit('path') | basename }}"
 
-- name: Check if kafka home is empty
+- name: Check for non-hidden files or directories in kafka_home
   ansible.builtin.find:
     paths: "{{ kafka_home }}"
     file_type: any
-    hidden: true
+    hidden: false
+    patterns: '*'
   register: kafka_home_find
 
-- name: set kafka_home_empty
+- name: Set kafka_home_empty
   ansible.builtin.set_fact:
-    kafka_home_empty: "{{ (kafka_home_find.matched | default(0)) == 0 }}"
+    kafka_home_empty: "{{ kafka_home_find.matched == 0 }}"
 
 - name: Assert kafka home is empty
   ansible.builtin.assert:

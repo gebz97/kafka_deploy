@@ -1,0 +1,70 @@
+- name: Validate kafka_controllers group exists and has odd count
+  ansible.builtin.assert:
+    that:
+      - groups['kafka_controllers'] is defined
+      - groups['kafka_controllers'] | length > 0
+      - groups['kafka_controllers'] | length is odd
+    fail_msg: >
+      'kafka_controllers' group must exist, be non-empty, and have an odd number of members (for quorum).
+
+- name: Validate kafka_brokers group exists and is not empty
+  ansible.builtin.assert:
+    that:
+      - groups['kafka_brokers'] is defined
+      - groups['kafka_brokers'] | length > 0
+    fail_msg: >
+      'kafka_brokers' group must exist, be non-empty.
+
+- name: Ensure Kafka controller hosts are listed in /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} KAFKA CONTROLLERS"
+    block: |
+      {% for host in groups['kafka_controllers'] %}
+      {{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_fqdn'] }} {{ hostvars[host]['ansible_hostname'] }}
+      {% endfor %}
+
+- name: Ensure the server.properties file is deployed
+  ansible.builtin.template:
+    src: templates/server.properties.multinode.j2
+    dest: "{{ kafka_home }}/config/server.properties"
+    backup: true
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: '0644'
+
+- name: Ensure the SystemD unit file for kafka is deployed
+  ansible.builtin.template:
+    src: templates/kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Generate Kafka Cluster UUID (only on first controller)
+  run_once: true
+  delegate_to: "{{ groups['kafka_controllers'][0] }}"
+  ansible.builtin.command: "{{ kafka_home }}/bin/kafka-storage.sh random-uuid"
+  register: kafka_cluster_uuid_out
+
+- name: Set kafka cluster UUID fact (global)
+  ansible.builtin.set_fact:
+    kafka_cluster_uuid: "{{ kafka_cluster_uuid_out.stdout }}"
+
+- name: Format Kafka storage directory
+  ansible.builtin.command: >
+    sudo -u {{ kafka_user }} {{ kafka_home }}/bin/kafka-storage.sh format
+    --cluster-id {{ kafka_cluster_uuid }}
+    --config {{ kafka_home }}/config/server.properties
+  register: kafka_format_result
+  changed_when: "'formatted' in kafka_format_result.stdout or kafka_format_result.rc == 0"
+
+- name: Reload SystemD daemon
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Ensure Kafka service is enabled and started
+  ansible.builtin.service:
+    name: kafka
+    state: started
+    enabled: true
