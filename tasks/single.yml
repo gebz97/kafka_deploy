@@ -9,6 +9,8 @@
     src: templates/server.properties.single.j2
     dest: "{{ kafka_home }}/config/server.properties"
     backup: true
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
 
 - name: Ensure the SystemD unit file for kafka is deployed
   ansible.builtin.template:
@@ -24,9 +26,13 @@
     kafka_cluster_uuid: "{{ kafka_cluster_uuid_out.stdout }}"
 
 - name: Ensure Cluster UUID is formatted
-  ansible.builtin.command: |
-    {{ kafka_home }}/bin/kafka-storage.sh \
-      -t {{ kafka_cluster_uuid }} \
+  become: true
+  become_user: "{{ kafka_user }}"
+  become_method: sudo
+  ansible.builtin.command: >
+    {{ kafka_home }}/bin/kafka-storage.sh format \
+      --standalone
+      --cluster-id {{ kafka_cluster_uuid }} \
       --config {{ kafka_home }}/config/server.properties
 
 - name: Ensure SystemD Daemon Reload
