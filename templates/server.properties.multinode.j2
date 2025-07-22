@@ -57,7 +57,7 @@ socket.request.max.bytes=104857600
 
 log.dirs={{ kafka_home }}/logs/kraft/
 
-num.partitions=1
+num.partitions={{ partitions_per_topic | defailt(1) }}
 num.recovery.threads.per.data.dir=1
 
 offsets.topic.replication.factor={{ topic_repl_factor | default(1) }}
