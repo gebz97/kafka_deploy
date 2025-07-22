@@ -1,0 +1,17 @@
+---
+- name: single node deployment
+  hosts:
+    - kafka_cluster
+  
+  vars:
+    #standalone: false
+    multinode: true
+    #download_tarball: false
+    #kafka_url:
+    topic_repl_factor: 1
+    coordinator_topic_repl_factor: 1
+    txn_state_log_repl_factor: 1
+    log_retention_hours: 24
+  
+  roles:
+    - role: gebz97.kafkadeploy
