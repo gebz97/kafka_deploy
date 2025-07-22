@@ -1,21 +1,25 @@
 ---
 - name: Prepare nodes for Kafka download
-  ansible.builtin.include_tasks: prepare_nodes.yml
+  ansible.builtin.include_tasks:
+    file: prepare_nodes.yml
 
 - name: Download Tarball and Setup kafka home
   when: download_tarball | bool
-  ansible.builtin.include_tasks: setup_home.yml
-  
-- name: Deploy single instance kafka
-  when:
-    - single_instance | bool
-    - not multinode_cluster | bool
-  ansible.builtin.include_tasks:
-    file: single.yml
+  ansible.builtin.include_tasks: 
+    file: setup_home.yml
 
 - name: Deploy single instance kafka
   when:
-    - not single_instance | bool
+    - single_instance is defined
+    - single_instance | bool
+    - multinode_cluster is not defined or not multinode_cluster | bool
+  ansible.builtin.include_tasks:
+    file: single.yml
+
+- name: Deploy Multinode kafka Cluster
+  when:
+    - multinode_cluster is defined
     - multinode_cluster | bool
+    - single_instance is not defined or not single_instance | bool
   ansible.builtin.include_tasks:
     file: multinode.yml

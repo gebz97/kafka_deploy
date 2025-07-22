@@ -1,0 +1,50 @@
+process.roles={{ kafka_roles }}
+node.id={{ kafka_node_id }}
+controller.quorum.bootstrap.servers={% for node in kraft_controllers %}{{ node.fqdn }}:9093{% if not loop.last %},{% endif %}{% endfor %}
+
+listeners={% if 'broker' in kafka_roles %}PLAINTEXT://:9092{% endif %}{% if 'controller' in kafka_roles %}{% if 'broker' in kafka_roles %},{% endif %}CONTROLLER://:9093{% endif %}
+
+{% if 'broker' in kafka_roles %}
+inter.broker.listener.name=PLAINTEXT
+{% endif %}
+
+advertised.listeners={
+  {% set listeners = [] -%}
+  {% if 'broker' in kafka_roles %}
+    {% set _ = listeners.append("PLAINTEXT://%s:9092" % ansible_default_ipv4.address) %}
+  {% endif %}
+  {% if 'controller' in kafka_roles %}
+    {% set _ = listeners.append("CONTROLLER://%s:9093" % ansible_default_ipv4.address) %}
+  {% endif %}
+  {{ listeners | join(',') }}
+}
+
+{% if 'controller' in kafka_roles %}
+controller.listener.names=CONTROLLER
+{% endif %}
+
+listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
+
+num.network.threads=3
+num.io.threads=8
+
+socket.send.buffer.bytes=102400
+socket.receive.buffer.bytes=102400
+socket.request.max.bytes=104857600
+
+log.dirs={{ kafka_home }}/logs/kraft/
+
+num.partitions=1
+num.recovery.threads.per.data.dir=1
+
+offsets.topic.replication.factor={{ topic_repl_factor }}
+
+share.coordinator.state.topic.replication.factor={{ coordinator_topic_repl_factor }}
+share.coordinator.state.topic.min.isr=1
+
+transaction.state.log.replication.factor={{ txn_state_log_repl_factor }}
+transaction.state.log.min.isr=1
+
+log.retention.hours={{ log_retention_hours }}
+log.segment.bytes=1073741824
+log.retention.check.interval.ms=300000

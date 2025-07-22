@@ -9,3 +9,14 @@
 - name: Debug kafka cluster UUID fact
   ansible.builtin.debug:
     var: kafka_cluster_uuid
+
+- name: Ensure there's a line in /etc/hosts for self-resolved hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ ansible_default_ipv4.address }} {{ ansible_fqdn }} {{ ansible_hostname }}"
+  
+- name: Ensure the server.properties file is deployed
+  ansible.builtin.template:
+    src: templates/server.properties.j2
+    dest: "{{ kafka_home }}/conf/server.properties"
+    backup: true
