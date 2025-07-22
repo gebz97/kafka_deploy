@@ -26,11 +26,8 @@
     kafka_cluster_uuid: "{{ kafka_cluster_uuid_out.stdout }}"
 
 - name: Ensure Cluster UUID is formatted
-  become: true
-  become_user: "{{ kafka_user }}"
-  become_method: sudo
   ansible.builtin.command: >
-    {{ kafka_home }}/bin/kafka-storage.sh format \
+    sudo -u {{ kafka_user }} {{ kafka_home }}/bin/kafka-storage.sh format \
       --standalone
       --cluster-id {{ kafka_cluster_uuid }} \
       --config {{ kafka_home }}/config/server.properties
