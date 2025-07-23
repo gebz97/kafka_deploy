@@ -1,5 +1,5 @@
 [standalone]
-kafka-sn.gebz.local
+kafka-sn.example.com
 
 [kafka_controllers]
 kafka-01.example.com
